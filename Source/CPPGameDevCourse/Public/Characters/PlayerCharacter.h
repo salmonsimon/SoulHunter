@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "CharacterType.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -12,6 +13,7 @@ class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
+class AItem;
 
 UCLASS()
 class CPPGAMEDEVCOURSE_API APlayerCharacter : public ACharacter
@@ -38,16 +40,34 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* JumpAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* AttackAction;
+
 	void Move(const FInputActionValue& Value);
 
 	void Look(const FInputActionValue& Value);
 
-	
+	void InteractKeyPressed();
 
-private: 
+	void Attack();
+
+private:
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* ViewCamera;
+
+	UPROPERTY(VisibleInstanceOnly)
+	AItem* OverlappingItem;
+
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+
+public:
+
+	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
+	UFUNCTION(BlueprintCallable) FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 };

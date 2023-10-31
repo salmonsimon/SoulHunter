@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CharacterType.h"
+
 #include "PlayerCharacterAnimInstance.generated.h"
 
 /**
@@ -25,8 +27,14 @@ public:
 	class UCharacterMovementComponent* PlayerMovementComponent;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	FVector Velocity;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float GroundSpeed;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool IsFalling;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State")
+	ECharacterState CharacterState;
 };
