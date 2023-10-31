@@ -4,6 +4,7 @@
 #include "Items/Item.h"
 #include "CPPGameDevCourse/DebugMacros.h"
 #include "Components/SphereComponent.h"
+#include "Characters/PlayerCharacter.h"
 
 
 /**
@@ -44,21 +45,19 @@ float AItem::TransformedCos()
 
 void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	const FString OtherActorName = OtherActor->GetName();
-
-	if (GEngine)
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+	if (PlayerCharacter)
 	{
-		GEngine->AddOnScreenDebugMessage(1, 30.f, FColor::Red, OtherActorName);
+		PlayerCharacter->SetOverlappingItem(this);
 	}
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	const FString OtherActorName = OtherActor->GetName();
-
-	if (GEngine)
+	APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+	if (PlayerCharacter)
 	{
-		GEngine->AddOnScreenDebugMessage(2, 30.f, FColor::Blue, OtherActorName);
+		PlayerCharacter->SetOverlappingItem(nullptr);
 	}
 }
 
@@ -71,5 +70,7 @@ void AItem::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RunningTime += DeltaTime;
+
+	//AddActorWorldOffset(FVector(0.f, 0.f, TransformedSin()));
 }
 
