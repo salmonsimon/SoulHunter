@@ -14,6 +14,8 @@ class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
 class AItem;
+class AWeapon;
+class UAnimMontage;
 
 UCLASS()
 class CPPGAMEDEVCOURSE_API APlayerCharacter : public ACharacter
@@ -27,6 +29,33 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void Move(const FInputActionValue& Value);
+
+	void Look(const FInputActionValue& Value);
+
+	void InteractKeyPressed();
+
+	void Attack();
+
+	void PlayAttackMontage();
+
+	UFUNCTION(BlueprintCallable)
+	void BackToUnoccupiedState();
+
+	bool CanAttack();
+
+	void PlayArmDisarmMontage(FName SectionName);
+
+	bool CanDisarm();
+
+	bool CanArm();
+
+	UFUNCTION(BlueprintCallable)
+	void Disarm();
+
+	UFUNCTION(BlueprintCallable)
+	void Arm();
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputMappingContext* MappingContext;
@@ -46,15 +75,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* AttackAction;
 
-	void Move(const FInputActionValue& Value);
-
-	void Look(const FInputActionValue& Value);
-
-	void InteractKeyPressed();
-
-	void Attack();
-
 private:
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState = EActionState::EAS_Unoccupied;
+
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
@@ -64,7 +90,14 @@ private:
 	UPROPERTY(VisibleInstanceOnly)
 	AItem* OverlappingItem;
 
-	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+	AWeapon* EquippedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montages")
+	UAnimMontage* AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montages")
+	UAnimMontage* ArmDisarmMontage;
 
 public:
 
