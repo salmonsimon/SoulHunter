@@ -9,6 +9,7 @@
 #include "Components/SceneComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Interfaces\HitInterface.h"
+#include "NiagaraComponent.h"
 
 AWeapon::AWeapon()
 {
@@ -47,6 +48,9 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 	{
 		SphereCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
+	if (EmbersEffect)
+		EmbersEffect->Deactivate();
 }
 
 void AWeapon::AttackMeshToSocket(USceneComponent* InParent, const FName& InSocketName)
@@ -56,6 +60,8 @@ void AWeapon::AttackMeshToSocket(USceneComponent* InParent, const FName& InSocke
 
 void AWeapon::ResetHitIgnoreActors()
 {
+	UE_LOG(LogTemp, Warning, TEXT("REsetting hit ignore actors"));
+
 	HitIgnoreActors.Empty();
 }
 

@@ -5,6 +5,7 @@
 #include "CPPGameDevCourse/DebugMacros.h"
 #include "Components/SphereComponent.h"
 #include "Characters/PlayerCharacter.h"
+#include "NiagaraComponent.h"
 
 
 /**
@@ -20,6 +21,9 @@ AItem::AItem()
 
 	SphereCollider = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	SphereCollider->SetupAttachment(RootComponent);
+
+	EmbersEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Component"));
+	EmbersEffect->SetupAttachment(RootComponent);
 }
 
 /**

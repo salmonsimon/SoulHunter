@@ -9,6 +9,7 @@
 #include "BreakableActor.generated.h"
 
 class UGeometryCollectionComponent;
+class UCapsuleComponent;
 
 UCLASS()
 class CPPGAMEDEVCOURSE_API ABreakableActor : public AActor, public IHitInterface
@@ -24,8 +25,15 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-private:
-
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UCapsuleComponent* CapsuleCollider;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Breakable Properties")
+	TArray<TSubclassOf<class ATreasure>>  TreasureClasses;
+
+	bool bBroken = false;
 };

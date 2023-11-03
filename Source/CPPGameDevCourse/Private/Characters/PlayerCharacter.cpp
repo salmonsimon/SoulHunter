@@ -217,7 +217,7 @@ void APlayerCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type Collisi
 {
 	if (EquippedWeapon && EquippedWeapon->GetWeaponCollisionBox()) 
 	{
-		EquippedWeapon->GetWeaponCollisionBox()->SetCollisionEnabled(CollisionEnabled);
 		EquippedWeapon->ResetHitIgnoreActors();
+		EquippedWeapon->GetWeaponCollisionBox()->SetCollisionEnabled(CollisionEnabled);
 	}
 }
