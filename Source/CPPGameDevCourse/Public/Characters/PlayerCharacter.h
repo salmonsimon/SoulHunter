@@ -27,6 +27,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -45,7 +48,7 @@ protected:
 
 	bool CanAttack();
 
-	void PlayArmDisarmMontage(FName SectionName);
+	void PlayArmDisarmMontage(const FName& SectionName);
 
 	bool CanDisarm();
 
@@ -98,6 +101,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Montages")
 	UAnimMontage* ArmDisarmMontage;
+
+	int32 LastSelectedAttackMontageSection = -1;
 
 public:
 

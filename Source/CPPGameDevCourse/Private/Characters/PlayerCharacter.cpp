@@ -13,6 +13,7 @@
 #include "Items\Item.h"
 #include "Items\Weapons\Weapon.h"
 #include "Animation/AnimMontage.h"
+#include "Components\BoxComponent.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -125,8 +126,14 @@ void APlayerCharacter::PlayAttackMontage()
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AttackMontage)
 	{
-		int32 TotalSections = AttackMontage->GetNumSections();
-		const int32 AttackSelection = FMath::RandRange(0, TotalSections - 1);
+		const int32 TotalSections = AttackMontage->GetNumSections();
+		int32 AttackSelection = FMath::RandRange(0, TotalSections - 1);
+
+		while (AttackSelection == LastSelectedAttackMontageSection)
+			AttackSelection = FMath::RandRange(0, TotalSections - 1);
+
+		LastSelectedAttackMontageSection = AttackSelection;
+
 		const FName SectionName = AttackMontage->GetSectionName(AttackSelection);
 
 		AnimInstance->Montage_Play(AttackMontage);
@@ -145,7 +152,7 @@ bool APlayerCharacter::CanAttack()
 		   ActionState == EActionState::EAS_Unoccupied;
 }
 
-void APlayerCharacter::PlayArmDisarmMontage(FName SectionName)
+void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -203,5 +210,14 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
+	}
+}
+
+void APlayerCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled)
+{
+	if (EquippedWeapon && EquippedWeapon->GetWeaponCollisionBox()) 
+	{
+		EquippedWeapon->GetWeaponCollisionBox()->SetCollisionEnabled(CollisionEnabled);
+		EquippedWeapon->ResetHitIgnoreActors();
 	}
 }
