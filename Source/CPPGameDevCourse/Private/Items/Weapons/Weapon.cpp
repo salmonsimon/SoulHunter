@@ -13,6 +13,8 @@
 
 AWeapon::AWeapon()
 {
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	WeaponCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Weapon Collision Box"));
 	WeaponCollisionBox->SetupAttachment(GetRootComponent());
 

@@ -12,6 +12,7 @@
 class UAnimMontage;
 class UAttributeComponent;
 class UHealthBarComponent;
+class UPawnSensingComponent;
 
 UCLASS()
 class CPPGAMEDEVCOURSE_API AEnemy : public ACharacter, public IHitInterface
@@ -25,7 +26,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
+	void CheckCombatTarget();
+
+	void CheckPatrolTarget();
+
+	void ChooseNewPatrolTarget();
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void GetHit_Implementation(const FVector& ImpactPoint) override;
@@ -35,28 +41,69 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void MoveToTarget(AActor* PatrolTarget);
+
+	bool InTargetRange(AActor* Target, double Radius);
+
+	UFUNCTION()
+	void PawnSeen(APawn* SeenPawn);
 
 	void Death();
 
 	void PlayHitReactMontage(const FName& SectionName);
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly)
 	EDeathPose DeathPose = EDeathPose::EDP_Alive;
 
 private:
+	UPROPERTY()
+	class AAIController* EnemyController;
+
+	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
+
+	float WalkingSpeed = 125.f;
+	float RunningSpeed = 350.f;
+
 	UPROPERTY(VisibleAnywhere)
 	UAttributeComponent* Attributes;
 
 	UPROPERTY(VisibleAnywhere)
 	UHealthBarComponent* HealthBarWidget;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Montages")
-	UAnimMontage* HitReactionMontage;
+	UPROPERTY(VisibleAnywhere)
+	UPawnSensingComponent* PawnSensing;
+
+	UPROPERTY()
+	AActor* CombatTarget;
+
+	UPROPERTY(EditAnywhere)
+	float CombatRadius = 500.f;
+
+	UPROPERTY(EditAnywhere)
+	float AttackRadius = 150.f;
+
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	AActor* PatrolTarget;
+
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	TArray<AActor*> PatrolTargets;
+
+	UPROPERTY(EditAnywhere)
+	double PatrolRadius = 200.f;
+
+	FTimerHandle PatrolTimer;
+	void PatrolTimerFinished();
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float PatrolWaitinTimeMin = 4.f;
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float PatrolWaitingTimeMax = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Montages")
-	UAnimMontage* DeathMontage;
+	UAnimMontage* HitReactionMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Sounds")
 	USoundBase* HitSound;
@@ -64,11 +111,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "VisualEffects")
 	UParticleSystem* HitParticles;
 
-	UPROPERTY()
-	AActor* CombatTarget;
-
-	UPROPERTY(EditAnywhere)
-	float CombatRadius = 500.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Montages")
+	UAnimMontage* DeathMontage;
 
 public:	
 };

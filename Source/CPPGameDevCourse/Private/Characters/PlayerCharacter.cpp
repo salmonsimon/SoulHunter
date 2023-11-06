@@ -50,6 +50,8 @@ void APlayerCharacter::BeginPlay()
 			Subsystem->AddMappingContext(MappingContext, 0);
 		}
 	}
+
+	Tags.Add(FName("Player"));
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
