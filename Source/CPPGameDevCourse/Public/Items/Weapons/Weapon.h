@@ -20,7 +20,7 @@ class CPPGAMEDEVCOURSE_API AWeapon : public AItem
 
 public:
 	AWeapon();
-	virtual void Equip(USceneComponent* InParent, FName InSocketName);
+	virtual void Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator);
 	void AttackMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 	void ResetHitIgnoreActors();
 	
@@ -39,6 +39,9 @@ protected:
 private: 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	USoundBase* EquipSound;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float Damage = 20.f;
 
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* WeaponCollisionBox;

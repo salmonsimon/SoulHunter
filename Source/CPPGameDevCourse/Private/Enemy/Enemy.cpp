@@ -8,6 +8,9 @@
 #include "Animation/AnimMontage.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/AttributeComponent.h"
+#include "HUD/HealthBarComponent.h"
+#include "Characters/CharacterType.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -21,6 +24,11 @@ AEnemy::AEnemy()
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
+
+	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
+	HealthBarWidget->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned
@@ -28,6 +36,34 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (HealthBarWidget)
+	{
+		HealthBarWidget->SetVisibility(false);
+		HealthBarWidget->SetHealthPercent(1.f);
+	}
+}
+
+void AEnemy::Death()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		const int32 TotalSections = DeathMontage->GetNumSections();
+		int32 DeathSelection = FMath::RandRange(0, TotalSections - 1);
+
+		const FName SectionName = DeathMontage->GetSectionName(DeathSelection);
+		DeathPose = (EDeathPose)(DeathSelection + 1);
+
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
+	}
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HealthBarWidget)
+		HealthBarWidget->SetVisibility(false);
+
+	SetLifeSpan(30.f);
 }
 
 void AEnemy::PlayHitReactMontage(const FName& SectionName)
@@ -46,6 +82,18 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (CombatTarget)
+	{
+		const double CombatTargetDistance = (CombatTarget->GetActorLocation() - GetActorLocation()).Size();
+
+		if (CombatTargetDistance > CombatRadius)
+		{
+			CombatTarget = nullptr;
+
+			if (HealthBarWidget)
+				HealthBarWidget->SetVisibility(false);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -57,7 +105,13 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
 {
-	DirectionalHitReact(ImpactPoint);
+	if (HealthBarWidget)
+		HealthBarWidget->SetVisibility(true);
+
+	if (Attributes && Attributes->IsAlive())
+		DirectionalHitReact(ImpactPoint);
+	else
+		Death();
 
 	if (HitSound)
 	{
@@ -94,5 +148,18 @@ void AEnemy::DirectionalHitReact(const FVector& ImpactPoint)
 		SectionName = FName("ReactFromRight");
 
 	PlayHitReactMontage(SectionName);
+}
+
+float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (Attributes && HealthBarWidget)
+	{
+		Attributes->ReceiveDamage(DamageAmount);
+		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
+	}
+
+	CombatTarget = EventInstigator->GetPawn();
+
+	return DamageAmount;
 }
 
