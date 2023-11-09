@@ -14,11 +14,13 @@
 #include "Items\Weapons\Weapon.h"
 #include "Animation/AnimMontage.h"
 #include "Components\BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 
-// Sets default values
+#pragma region Main
+
 APlayerCharacter::APlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bUseControllerRotationPitch = false;
@@ -27,6 +29,12 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -38,11 +46,10 @@ APlayerCharacter::APlayerCharacter()
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
 
-// Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -51,8 +58,41 @@ void APlayerCharacter::BeginPlay()
 		}
 	}
 
-	Tags.Add(FName("Player"));
+	Tags.Add(FName("EngageableTarget"));
 }
+
+void APlayerCharacter::Death()
+{
+
+}
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
+	}
+}
+
+void APlayerCharacter::BackToUnoccupiedState()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+#pragma endregion
+
+#pragma region Locomotion
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
@@ -81,6 +121,10 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookValue.Y);
 	}
 }
+
+#pragma endregion
+
+#pragma region Interaction
 
 void APlayerCharacter::InteractKeyPressed()
 {
@@ -114,44 +158,52 @@ void APlayerCharacter::InteractKeyPressed()
 	}
 }
 
+#pragma endregion
+
+#pragma region Combat
+
 void APlayerCharacter::Attack()
 {
 	if (CanAttack())
 	{
-		PlayAttackMontage();
+		PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
 		ActionState = EActionState::EAS_Attacking;
 	}
-}
-
-void APlayerCharacter::PlayAttackMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AttackMontage)
-	{
-		const int32 TotalSections = AttackMontage->GetNumSections();
-		int32 AttackSelection = FMath::RandRange(0, TotalSections - 1);
-
-		while (AttackSelection == LastSelectedAttackMontageSection)
-			AttackSelection = FMath::RandRange(0, TotalSections - 1);
-
-		LastSelectedAttackMontageSection = AttackSelection;
-
-		const FName SectionName = AttackMontage->GetSectionName(AttackSelection);
-
-		AnimInstance->Montage_Play(AttackMontage);
-		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
-	}
-}
-
-void APlayerCharacter::BackToUnoccupiedState()
-{
-	ActionState = EActionState::EAS_Unoccupied;
 }
 
 bool APlayerCharacter::CanAttack()
 {
 	return CharacterState != ECharacterState::ECS_Unequipped && 
 		   ActionState == EActionState::EAS_Unoccupied;
+}
+
+void APlayerCharacter::Arm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("RightHandSocket"));
+	}
+}
+
+void APlayerCharacter::Disarm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("SpineSocket"));
+	}
+}
+
+bool APlayerCharacter::CanArm()
+{
+	return ActionState == EActionState::EAS_Unoccupied &&
+		CharacterState == ECharacterState::ECS_Unequipped &&
+		EquippedWeapon;
+}
+
+bool APlayerCharacter::CanDisarm()
+{
+	return ActionState == EActionState::EAS_Unoccupied &&
+		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
 void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
@@ -165,61 +217,5 @@ void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
 	}
 }
 
-bool APlayerCharacter::CanDisarm()
-{
-	return ActionState == EActionState::EAS_Unoccupied &&
-		   CharacterState != ECharacterState::ECS_Unequipped;
-}
 
-bool APlayerCharacter::CanArm()
-{
-	return ActionState == EActionState::EAS_Unoccupied &&
-		   CharacterState == ECharacterState::ECS_Unequipped &&
-		   EquippedWeapon;
-}
-
-void APlayerCharacter::Disarm()
-{
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("SpineSocket"));
-	}
-}
-
-void APlayerCharacter::Arm()
-{
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->AttackMeshToSocket(GetMesh(), FName("RightHandSocket"));
-	}
-}
-
-// Called every frame
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
-// Called to bind functionality to input
-void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
-	}
-}
-
-void APlayerCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled)
-{
-	if (EquippedWeapon && EquippedWeapon->GetWeaponCollisionBox()) 
-	{
-		EquippedWeapon->ResetHitIgnoreActors();
-		EquippedWeapon->GetWeaponCollisionBox()->SetCollisionEnabled(CollisionEnabled);
-	}
-}
+#pragma endregion
