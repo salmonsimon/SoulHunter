@@ -13,6 +13,14 @@
 ABaseCharacter::ABaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
+
+	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 }
 
 void ABaseCharacter::BeginPlay()
@@ -34,15 +42,17 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	return DamageAmount;
 }
 
-void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint)
+void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (IsAlive())
-		DirectionalHitReact(ImpactPoint);
+	if (IsAlive() && Hitter)
+		DirectionalHitReact(Hitter->GetActorLocation());
 	else
 		Death();
 
 	PlayHitSound(ImpactPoint);
 	SpawnHitParticles(ImpactPoint);
+
+	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 bool ABaseCharacter::IsAlive()
@@ -162,4 +172,32 @@ int32 ABaseCharacter::PlayMontageRandomSection(UAnimMontage* AnimationMontage, i
 	return -1;
 }
 
+void ABaseCharacter::StopAttackMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance)
+		AnimInstance->Montage_Stop(.25f, AttackMontage);
+}
+
 #pragma endregion
+
+FVector ABaseCharacter::GetTranslationWarpTarget()
+{
+	if (CombatTarget == nullptr) return FVector();
+
+	const FVector CombatTargetLocation = CombatTarget->GetActorLocation();
+	const FVector Location = GetActorLocation();
+
+	const FVector TargetToThisActor = Location - CombatTargetLocation;
+
+	return CombatTargetLocation + TargetToThisActor.GetSafeNormal() * WarpTargetDistance;
+}
+
+FVector ABaseCharacter::GetRotationWarpTarget()
+{
+	if (CombatTarget)
+		return CombatTarget->GetActorLocation();
+
+	return FVector();
+}

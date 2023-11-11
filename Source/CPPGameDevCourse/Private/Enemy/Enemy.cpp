@@ -16,19 +16,12 @@ AEnemy::AEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetGenerateOverlapEvents(true);
-
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
-
-	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 
 	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
 	HealthBarWidget->SetupAttachment(GetRootComponent());
@@ -57,18 +50,27 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	UpdateHealthPercent();
 
 	CombatTarget = EventInstigator->GetPawn();
-	StartChasing();
+
+	if (IsInsideAttackRadius())
+		EnemyState = EEnemyState::EES_Attacking;
+	else if (IsOutsideAttackRadius())
+		StartChasing();
 
 	return DamageAmount;
 }
 
-void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
+void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
 	if (EnemyState == EEnemyState::EES_Dead) return;
 
 	ShowHealthBar(true);
 
-	ABaseCharacter::GetHit_Implementation(ImpactPoint);
+	ABaseCharacter::GetHit_Implementation(ImpactPoint, Hitter);
+
+	ClearPatrolTimer();
+	ClearAttackTimer();
+
+	StopAttackMontage();
 }
 
 void AEnemy::Destroyed()
@@ -115,6 +117,8 @@ void AEnemy::Death()
 	SetLifeSpan(DeathLifeSpan);
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
+
+	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 #pragma endregion

@@ -32,7 +32,7 @@ public:
 	virtual void Destroyed() override;
 
 	// IHitInterface
-	virtual void GetHit_Implementation(const FVector& ImpactPoint) override;
+	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
 
 #pragma endregion
 
@@ -142,9 +142,6 @@ private:
 	bool IsOutsideCombatRadius();
 	bool IsOutsideAttackRadius();
 	bool IsInsideAttackRadius();
-
-	UPROPERTY()
-	AActor* CombatTarget;
 
 	UPROPERTY(EditAnywhere)
 	float CombatRadius = 500.f;
