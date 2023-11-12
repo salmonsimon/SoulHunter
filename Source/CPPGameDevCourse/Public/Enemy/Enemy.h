@@ -44,6 +44,8 @@ protected:
 
 	virtual void Death(const FVector& ImpactPoint) override;
 
+	void SpawnSoul();
+
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyDeathPose DeathPose;
 
@@ -91,6 +93,9 @@ private:
 
 	UPROPERTY (EditAnywhere)
 	float PawnPeripheralVisionAngle = 45.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TSubclassOf<class ASoul> SoulClass;
 
 #pragma endregion
 

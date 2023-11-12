@@ -52,8 +52,8 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOw
 	if (SphereCollider)
 		SphereCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	if (EmbersEffect)
-		EmbersEffect->Deactivate();
+	if (ItemEffect)
+		ItemEffect->Deactivate();
 }
 
 void AWeapon::AttackMeshToSocket(USceneComponent* InParent, const FName& InSocketName)

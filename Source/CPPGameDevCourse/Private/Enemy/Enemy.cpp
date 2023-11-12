@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "HUD/HealthBarComponent.h"
 #include "Items/Weapons/Weapon.h"
+#include "Items/Soul.h"
 
 #pragma region Main
 
@@ -126,6 +127,21 @@ void AEnemy::Death(const FVector& ImpactPoint)
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	SpawnSoul();
+}
+
+void AEnemy::SpawnSoul()
+{
+	UWorld* World = GetWorld();
+	if (World && SoulClass && Attributes)
+	{
+		const FVector SpawnLocation = GetActorLocation();
+		ASoul* SpawnedSoul = World->SpawnActor<ASoul>(SoulClass, SpawnLocation, GetActorRotation());
+
+		if (SpawnedSoul)
+			SpawnedSoul->SetSouls(Attributes->GetSouls());
+	}
 }
 
 #pragma endregion

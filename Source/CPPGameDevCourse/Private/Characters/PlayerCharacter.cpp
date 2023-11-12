@@ -12,6 +12,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Items\Item.h"
 #include "Items\Weapons\Weapon.h"
+#include "Items/Soul.h"
+#include "Items/Treasure.h"
 #include "Animation/AnimMontage.h"
 #include "Components\BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -64,6 +66,12 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->RegenStamina(DeltaTime);
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
 }
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -87,6 +95,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Dodge);
 	}
 }
 
@@ -101,6 +110,29 @@ void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor*
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
 
 	ActionState = EActionState::EAS_HitReact;
+}
+
+void APlayerCharacter::SetOverlappingItem(AItem* Item)
+{
+	OverlappingItem = Item;
+}
+
+void APlayerCharacter::AddSouls(ASoul* Soul)
+{
+	if (Attributes)
+	{
+		Attributes->AddSouls(Soul->GetSouls());
+		PlayerOverlay->SetSoulsCountText(Attributes->GetSouls());
+	}
+}
+
+void APlayerCharacter::AddGold(ATreasure* Treasure)
+{
+	if (Attributes)
+	{
+		Attributes->AddGold(Treasure->GetGold());
+		PlayerOverlay->SetGoldCountText(Attributes->GetGold());
+	}
 }
 
 void APlayerCharacter::Death(const FVector& ImpactPoint)
@@ -268,6 +300,31 @@ void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
 		AnimInstance->Montage_Play(ArmDisarmMontage);
 		AnimInstance->Montage_JumpToSection(SectionName, ArmDisarmMontage);
 	}
+}
+
+void APlayerCharacter::Dodge()
+{
+	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && DodgeMontage)
+	{
+		AnimInstance->Montage_Play(DodgeMontage);
+		ActionState = EActionState::EAS_Occupied;
+
+		if (Attributes && PlayerOverlay)
+		{
+			Attributes->UseStamina(Attributes->GetDodgeCost());
+			PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+		}
+	}
+}
+
+bool APlayerCharacter::HasEnoughStamina()
+{
+	return Attributes &&
+		   Attributes->GetStamina() > Attributes->GetDodgeCost();
 }
 
 

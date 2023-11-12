@@ -23,21 +23,11 @@ class CPPGAMEDEVCOURSE_API AItem : public AActor
 	GENERATED_BODY()
 	
 public:	
-	/**
-	 * Sets default values for this actor's properties
-	*/
 	AItem();
 
-	/**
-	 * Called every frame
-	 * @param DeltaTime Game time elapsed during last frame modified by the time dilation
-	*/
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	/**
-	 * Called when the game starts or when spawned
-	*/
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -64,17 +54,27 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	virtual void SpawnPickupEffect();
+
+	virtual void SpawnPickupSound();
+
 	EItemState ItemState = EItemState::EIS_Hovering;
 
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* SphereCollider;
 
 	UPROPERTY(EditAnywhere)
-	class UNiagaraComponent* EmbersEffect;
+	class UNiagaraComponent* ItemEffect;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	float RunningTime;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* PickupEffect;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* PickupSound;
 };
 
 template<typename T>

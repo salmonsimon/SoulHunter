@@ -6,6 +6,7 @@
 #include "InputActionValue.h"
 #include "CharacterType.h"
 #include "BaseCharacter.h"
+#include "Interfaces/PickupInterface.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -18,11 +19,13 @@ class UCameraComponent;
 class UPlayerOverlay;
 class AItem;
 class UAnimMontage;
+class ASoul;
+class ATreasure;
 
 #pragma endregion
 
 UCLASS()
-class CPPGAMEDEVCOURSE_API APlayerCharacter : public ABaseCharacter
+class CPPGAMEDEVCOURSE_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
 {
 	GENERATED_BODY()
 
@@ -37,6 +40,9 @@ public:
 	virtual void Jump() override;
 
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
+	virtual void SetOverlappingItem(AItem* Item) override;
+	virtual void AddSouls(ASoul* Soul) override;
+	virtual void AddGold(ATreasure* Treasure) override;
 
 #pragma endregion
 
@@ -75,6 +81,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* AttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* DodgeAction;
+
 #pragma endregion
 
 #pragma region Combat
@@ -86,6 +95,8 @@ protected:
 	bool CanDisarm();
 	bool CanArm();
 	void PlayArmDisarmMontage(const FName& SectionName);
+	void Dodge();
+	bool HasEnoughStamina();
 
 #pragma endregion
 
@@ -123,13 +134,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Montages")
 	UAnimMontage* ArmDisarmMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Montages")
+	UAnimMontage* DodgeMontage;
+
 #pragma endregion
 
 public:
 
 #pragma region Getters/Setters
 
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	UFUNCTION(BlueprintCallable) FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
 	FORCEINLINE bool IsUnoccupied() const { return ActionState == EActionState::EAS_Unoccupied; }

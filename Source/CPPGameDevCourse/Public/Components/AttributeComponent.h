@@ -28,8 +28,37 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float MaxHealth;
 
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float CurrentStamina;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float MaxStamina;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	int32 Gold;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	int32 Souls;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float DodgeCost = 15.f;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float StaminaRegenRate = 5.f;
+
 public:
 	void ReceiveDamage(float Damage);
+	void UseStamina(float StaminaCost);
 	float GetHealthPercent();
+	float GetStaminaPercent();
 	bool IsAlive();
+
+	void AddSouls(int32 SoulsAmount);
+	void AddGold(int32 GoldAmount);
+	void RegenStamina(float DeltaTime);
+
+	FORCEINLINE int32 GetGold() const { return Gold; }
+	FORCEINLINE int32 GetSouls() const { return Souls; }
+	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
+	FORCEINLINE float GetStamina() const { return CurrentStamina; }
 };
