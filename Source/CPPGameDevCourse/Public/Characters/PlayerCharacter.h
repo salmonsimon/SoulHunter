@@ -15,6 +15,7 @@ class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
+class UPlayerOverlay;
 class AItem;
 class UAnimMontage;
 
@@ -31,7 +32,9 @@ public:
 
 	APlayerCharacter();
 	virtual void Tick(float DeltaTime) override;
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Jump() override;
 
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
 
@@ -42,7 +45,8 @@ protected:
 #pragma region Main
 
 	virtual void BeginPlay() override;
-	virtual void Death() override;
+	virtual void Death(const FVector& ImpactPoint) override;
+	void DropWeapon();
 	UFUNCTION(BlueprintCallable) void BackToUnoccupiedState();
 
 #pragma endregion
@@ -98,6 +102,8 @@ private:
 
 #pragma region Main Components
 
+	void InitializePlayerOverlay(APlayerController* PlayerController);
+
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
@@ -106,6 +112,9 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly)
 	AItem* OverlappingItem;
+
+	UPROPERTY()
+	UPlayerOverlay* PlayerOverlay;
 
 #pragma endregion
 
@@ -122,6 +131,8 @@ public:
 
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	UFUNCTION(BlueprintCallable) FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
+
+	FORCEINLINE bool IsUnoccupied() const { return ActionState == EActionState::EAS_Unoccupied; }
 
 #pragma endregion
 	

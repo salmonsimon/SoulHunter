@@ -67,6 +67,13 @@ void AWeapon::ResetHitIgnoreActors()
 	HitIgnoreActors.Add(GetOwner());
 }
 
+void AWeapon::EnablePhysics()
+{
+	ItemMesh->SetEnableGravity(true);
+	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetCollisionProfileName(FName("Ragdoll"), true);
+}
+
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (ActorIsSameType(OtherActor))

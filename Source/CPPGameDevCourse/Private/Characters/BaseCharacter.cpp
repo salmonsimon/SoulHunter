@@ -28,6 +28,30 @@ void ABaseCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ABaseCharacter::Death(const FVector& ImpactPoint)
+{
+	
+}
+
+void ABaseCharacter::StartRagdoll(const FVector& ImpactPoint, const float& ImpulseStrenght)
+{
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(RagdollBaseBone, true);
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(RagdollBaseBone, 1.f);
+	GetMesh()->SetCollisionProfileName(FName("Ragdoll"), true);
+
+	GetMesh()->SetCanEverAffectNavigation(true);
+
+	const FVector ImpactLowered(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
+	const FVector HitToThisActor = (GetActorLocation() - ImpactLowered).GetSafeNormal();
+
+	FVector LastUpdateVelocity = HitToThisActor + FVector(0.f, 0.f, .2f);
+	FVector Impulse = LastUpdateVelocity * ImpulseStrenght;
+
+	GetMesh()->AddImpulse(Impulse, RagdollBaseBone, true);
+
+	GetMesh()->bPauseAnims = true;
+}
+
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -47,7 +71,7 @@ void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* H
 	if (IsAlive() && Hitter)
 		DirectionalHitReact(Hitter->GetActorLocation());
 	else
-		Death();
+		Death(Hitter->GetActorLocation());
 
 	PlayHitSound(ImpactPoint);
 	SpawnHitParticles(ImpactPoint);
@@ -189,9 +213,11 @@ FVector ABaseCharacter::GetTranslationWarpTarget()
 	const FVector CombatTargetLocation = CombatTarget->GetActorLocation();
 	const FVector Location = GetActorLocation();
 
-	const FVector TargetToThisActor = Location - CombatTargetLocation;
+	const FVector ActorToTarget = CombatTargetLocation - Location;
 
-	return CombatTargetLocation + TargetToThisActor.GetSafeNormal() * WarpTargetDistance;
+	const FVector TargetTranslation = Location + ActorToTarget.GetSafeNormal() * WarpTargetDistance;
+
+	return TargetTranslation;
 }
 
 FVector ABaseCharacter::GetRotationWarpTarget()

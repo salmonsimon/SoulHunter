@@ -100,15 +100,22 @@ void AEnemy::BeginPlay()
 	Tags.Add(FName("Enemy"));
 }
 
-void AEnemy::Death()
+void AEnemy::Death(const FVector& ImpactPoint)
 {
+	Tags.Add(FName("Dead"));
+
 	EnemyState = EEnemyState::EES_Dead;
 
 	ClearAttackTimer();
 	ClearPatrolTimer();
 
-	int32 DeathSectionSelected = PlayMontageRandomSection(DeathMontage);
-	DeathPose = (EEnemyDeathPose)DeathSectionSelected;
+	if (DeathMontage)
+	{
+		int32 DeathSectionSelected = PlayMontageRandomSection(DeathMontage);
+		DeathPose = (EEnemyDeathPose)DeathSectionSelected;
+	}
+	else
+		StartRagdoll(ImpactPoint, 1500.f);
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -162,7 +169,8 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 {
 	const bool bShouldChaseTarget =
 		EnemyState == EEnemyState::EES_Patrolling &&
-		SeenPawn->ActorHasTag(FName("EngageableTarget"));
+		SeenPawn->ActorHasTag(FName("EngageableTarget")) &&
+		!SeenPawn->ActorHasTag(FName("Dead"));
 
 	if (bShouldChaseTarget)
 	{
@@ -251,8 +259,16 @@ void AEnemy::StartChasing()
 
 void AEnemy::Attack()
 {
-	EnemyState = EEnemyState::EES_Engaged;
-	PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
+	if (CombatTarget && CombatTarget->ActorHasTag(FName("Dead")))
+	{
+		LoseInterest();
+		ClearAttackTimer();
+	}
+	else
+	{
+		EnemyState = EEnemyState::EES_Engaged;
+		PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
+	}
 }
 
 bool AEnemy::CanAttack()

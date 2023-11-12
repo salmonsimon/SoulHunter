@@ -23,6 +23,8 @@ public:
 	virtual void Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator);
 	void AttackMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 	void ResetHitIgnoreActors();
+	void EnablePhysics();
+
 	
 protected:
 	virtual void BeginPlay() override;

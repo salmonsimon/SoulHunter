@@ -45,11 +45,15 @@ protected:
 #pragma region Main
 
 	virtual void BeginPlay() override;
-	virtual void Death() PURE_VIRTUAL(ABaseCharacter::Death);
+	virtual void Death(const FVector& ImpactPoint);
+	void StartRagdoll(const FVector& ImpactPoint, const float& ImpulseStrenght);
 	bool IsAlive();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Montages")
 	UAnimMontage* DeathMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	FName RagdollBaseBone = FName("pelvis");
 
 #pragma endregion
 
@@ -85,7 +89,7 @@ protected:
 	AActor* CombatTarget;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	double WarpTargetDistance = 75.f;
+	double WarpTargetDistance = 10.f;
 
 	int32 LastSelectedAttackMontageSection = -1;
 

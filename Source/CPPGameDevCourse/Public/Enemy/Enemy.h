@@ -42,7 +42,7 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void Death() override;
+	virtual void Death(const FVector& ImpactPoint) override;
 
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyDeathPose DeathPose;

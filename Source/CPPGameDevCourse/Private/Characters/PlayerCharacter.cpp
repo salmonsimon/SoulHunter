@@ -15,6 +15,9 @@
 #include "Animation/AnimMontage.h"
 #include "Components\BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/AttributeComponent.h"
+#include "HUD/PlayerHUD.h"
+#include "HUD/PlayerOverlay.h"
 
 #pragma region Main
 
@@ -44,12 +47,15 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(MappingContext, 0);
 		}
+
+		InitializePlayerOverlay(PlayerController);
 	}
 
 	Tags.Add(FName("EngageableTarget"));
@@ -58,6 +64,16 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (PlayerOverlay && Attributes)
+		PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+
+	return DamageAmount;
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -74,6 +90,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void APlayerCharacter::Jump()
+{
+	if (IsUnoccupied())
+		Super::Jump();
+}
+
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
@@ -81,14 +103,44 @@ void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor*
 	ActionState = EActionState::EAS_HitReact;
 }
 
-void APlayerCharacter::Death()
+void APlayerCharacter::Death(const FVector& ImpactPoint)
 {
+	ActionState = EActionState::EAS_Dead;
+	Tags.Add(FName("Dead"));
 
+	StartRagdoll(ImpactPoint, 1500.f);
+	DropWeapon();
+}
+
+void APlayerCharacter::DropWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		EquippedWeapon->EnablePhysics();
+	}
 }
 
 void APlayerCharacter::BackToUnoccupiedState()
 {
 	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void APlayerCharacter::InitializePlayerOverlay(APlayerController* PlayerController)
+{
+	APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
+	if (PlayerHUD)
+	{
+		PlayerOverlay = PlayerHUD->GetPlayerOverlay();
+
+		if (PlayerOverlay)
+		{
+			PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+			PlayerOverlay->SetStaminaBarPercent(1.f);
+			PlayerOverlay->SetGoldCountText(0);
+			PlayerOverlay->SetSoulsCountText(0);
+		}
+	}
 }
 
 #pragma endregion
