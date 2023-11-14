@@ -217,12 +217,10 @@ void APlayerCharacter::InteractKeyPressed()
 
 	if (AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem))
 	{
-		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
-		CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
+		if (EquippedWeapon)
+			EquippedWeapon->Destroy();
 
-		OverlappingItem = nullptr;
-
-		EquippedWeapon = OverlappingWeapon;
+		EquipWeapon(OverlappingWeapon);
 	}
 	else
 	{
@@ -241,6 +239,16 @@ void APlayerCharacter::InteractKeyPressed()
 			CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
 		}
 	}
+}
+
+void APlayerCharacter::EquipWeapon(AWeapon* OverlappingWeapon)
+{
+	OverlappingWeapon->Equip(GetMesh(), WeaponSocket, this, this);
+	CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
+
+	OverlappingItem = nullptr;
+
+	EquippedWeapon = OverlappingWeapon;
 }
 
 #pragma endregion

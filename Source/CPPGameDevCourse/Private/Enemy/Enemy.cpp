@@ -62,7 +62,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (EnemyState == EEnemyState::EES_Dead) return;
+	if (IsDead()) return;
 
 	ShowHealthBar(true);
 
@@ -72,6 +72,9 @@ void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 	ClearAttackTimer();
 
 	StopAttackMontage();
+
+	if (IsInsideAttackRadius() && !IsDead())
+		StartAttackTimer();
 }
 
 void AEnemy::Destroyed()
@@ -103,6 +106,8 @@ void AEnemy::BeginPlay()
 
 void AEnemy::Death(const FVector& ImpactPoint)
 {
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 10.f, FColor::White, TEXT("Entering death function"));
+
 	Tags.Add(FName("Dead"));
 
 	EnemyState = EEnemyState::EES_Dead;
@@ -136,7 +141,7 @@ void AEnemy::SpawnSoul()
 	UWorld* World = GetWorld();
 	if (World && SoulClass && Attributes)
 	{
-		const FVector SpawnLocation = GetActorLocation();
+		const FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 150.f);
 		ASoul* SpawnedSoul = World->SpawnActor<ASoul>(SoulClass, SpawnLocation, GetActorRotation());
 
 		if (SpawnedSoul)
@@ -168,7 +173,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 {
 	FAIMoveRequest MoveRequest;
 	MoveRequest.SetGoalActor(Target);
-	MoveRequest.SetAcceptanceRadius(40.f);
+	MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
 
 	EnemyController->MoveTo(MoveRequest);
 }

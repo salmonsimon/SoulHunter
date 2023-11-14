@@ -63,6 +63,8 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void InteractKeyPressed();
 
+	void EquipWeapon(AWeapon* OverlappingWeapon);
+
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputMappingContext* MappingContext;
 

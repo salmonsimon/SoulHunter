@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Interfaces/HitInterface.h"
 #include "GameFramework/Character.h"
+#include "Engine/SkeletalMesh.h"
+
 #include "BaseCharacter.generated.h"
 
 #pragma region Forward Declarations
@@ -64,6 +66,19 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(EditAnywhere, Category = Weapon, meta = (GetOptions = "GetSocketNames"))
+	FName WeaponSocket;
+
+	UFUNCTION()
+	TArray<FName> GetSocketNames() const
+	{
+		TArray<FName> SocketNames;
+
+		SocketNames.Append(GetMesh()->GetAllSocketNames());
+
+		return SocketNames;
+	}
 
 #pragma endregion
 

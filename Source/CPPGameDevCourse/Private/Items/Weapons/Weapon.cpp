@@ -64,6 +64,7 @@ void AWeapon::AttackMeshToSocket(USceneComponent* InParent, const FName& InSocke
 void AWeapon::ResetHitIgnoreActors()
 {
 	HitIgnoreActors.Empty();
+	HitIgnoreActors.Add(this);
 	HitIgnoreActors.Add(GetOwner());
 }
 
