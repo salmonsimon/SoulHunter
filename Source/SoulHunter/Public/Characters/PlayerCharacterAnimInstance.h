@@ -35,6 +35,20 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool IsFalling;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State")
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	ECharacterState CharacterState;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool ShouldMove;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float DirectionAngle;
+
+private:
+
+	void UpdateShouldMove();
+
+	void UpdateDirectionAngle();
+
+	const float BACKWARD_DIRECTION_CONSTANT = 180.f;
 };
