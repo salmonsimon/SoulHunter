@@ -44,6 +44,9 @@ private:
 	float DodgeCost = 15.f;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float SprintCost = 2.f;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float StaminaRegenRate = 5.f;
 
 public:
@@ -60,5 +63,6 @@ public:
 	FORCEINLINE int32 GetGold() const { return Gold; }
 	FORCEINLINE int32 GetSouls() const { return Souls; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
+	FORCEINLINE float GetSprintCost() const { return SprintCost; }
 	FORCEINLINE float GetStamina() const { return CurrentStamina; }
 };

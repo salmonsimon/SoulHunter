@@ -86,6 +86,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* DodgeAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* SprintAction;
+
 #pragma endregion
 
 #pragma region Combat
@@ -98,7 +101,9 @@ protected:
 	bool CanArm();
 	void PlayArmDisarmMontage(const FName& SectionName);
 	void Dodge();
-	bool HasEnoughStamina();
+	void StartSprinting();
+	void EndSprinting();
+	bool HasEnoughStamina(float StaminaToUse);
 
 #pragma endregion
 
@@ -130,6 +135,17 @@ private:
 	UPlayerOverlay* PlayerOverlay;
 
 #pragma endregion
+
+#pragma region Movement
+
+	UPROPERTY(EditAnywhere, Category = Movement)
+	float RunningSpeed = 500.f;
+
+	UPROPERTY(EditAnywhere, Category = Movement)
+	float SprintingSpeed = 800.f;
+
+#pragma endregion
+
 
 #pragma region Montages
 

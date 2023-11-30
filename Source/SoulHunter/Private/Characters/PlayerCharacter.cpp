@@ -96,6 +96,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Dodge);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartSprinting);
+		//EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::EndSprinting);
 	}
 }
 
@@ -312,7 +314,12 @@ void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
 
 void APlayerCharacter::Dodge()
 {
-	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina()) return;
+	float DodgeCost;
+
+	if (Attributes)
+		DodgeCost = Attributes->GetDodgeCost();
+
+	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina(DodgeCost)) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -323,17 +330,33 @@ void APlayerCharacter::Dodge()
 
 		if (Attributes && PlayerOverlay)
 		{
-			Attributes->UseStamina(Attributes->GetDodgeCost());
+			Attributes->UseStamina(DodgeCost);
 			PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 		}
 	}
 }
 
-bool APlayerCharacter::HasEnoughStamina()
+void APlayerCharacter::StartSprinting()
 {
-	return Attributes &&
-		   Attributes->GetStamina() > Attributes->GetDodgeCost();
+	float SprintCost;
+
+	if (Attributes)
+		SprintCost = Attributes->GetSprintCost();
+
+	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina(SprintCost)) return;
+
+	GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
 }
 
+void APlayerCharacter::EndSprinting()
+{
+	GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
+}
+
+bool APlayerCharacter::HasEnoughStamina(float StaminaToUse)
+{
+	return Attributes &&
+		   Attributes->GetStamina() > StaminaToUse;
+}
 
 #pragma endregion
