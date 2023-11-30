@@ -26,5 +26,27 @@ void UPlayerCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		GroundSpeed = UKismetMathLibrary::VSizeXY(Velocity);
 		IsFalling = PlayerMovementComponent->IsFalling();
 		CharacterState = PlayerCharacter->GetCharacterState();
+		
+		UpdateShouldMove();
+		UpdateDirectionAngle();
 	}
+}
+
+void UPlayerCharacterAnimInstance::UpdateShouldMove()
+{
+	ShouldMove = GroundSpeed > 3.0f &&
+		         !PlayerMovementComponent->GetCurrentAcceleration().IsZero();
+}
+
+void UPlayerCharacterAnimInstance::UpdateDirectionAngle()
+{
+	float DirectionAngle_LastTick = DirectionAngle;
+
+	FRotator ActorRotation = PlayerCharacter->GetActorRotation();
+	float LocalDirection = CalculateDirection(Velocity, ActorRotation);
+
+	if (FMath::IsNearlyEqual(FMath::Abs(LocalDirection), BACKWARD_DIRECTION_CONSTANT, 1.f)) 
+		DirectionAngle = DirectionAngle_LastTick < 0 ? -BACKWARD_DIRECTION_CONSTANT : BACKWARD_DIRECTION_CONSTANT;
+	else
+		DirectionAngle = LocalDirection;
 }
