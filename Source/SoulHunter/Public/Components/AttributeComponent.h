@@ -44,10 +44,10 @@ private:
 	float DodgeCost = 15.f;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
-	float SprintCost = 2.f;
+	float SprintCost = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
-	float StaminaRegenRate = 5.f;
+	float StaminaRegenRate = 8.f;
 
 public:
 	void ReceiveDamage(float Damage);

@@ -61,6 +61,9 @@ void APlayerCharacter::BeginPlay()
 	}
 
 	Tags.Add(FName("EngageableTarget"));
+
+	if (Attributes)
+		SprintingTimerDelegate.BindUFunction(this, FName("DepleteStaminaFromSprinting"), Attributes->GetSprintCost());
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -96,8 +99,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APlayerCharacter::InteractKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Attack);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Dodge);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartSprinting);
-		//EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::EndSprinting);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprinting);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::EndSprinting);
 	}
 }
 
@@ -314,7 +317,7 @@ void APlayerCharacter::PlayArmDisarmMontage(const FName& SectionName)
 
 void APlayerCharacter::Dodge()
 {
-	float DodgeCost;
+	float DodgeCost = 0;
 
 	if (Attributes)
 		DodgeCost = Attributes->GetDodgeCost();
@@ -338,7 +341,7 @@ void APlayerCharacter::Dodge()
 
 void APlayerCharacter::StartSprinting()
 {
-	float SprintCost;
+	float SprintCost = 0;
 
 	if (Attributes)
 		SprintCost = Attributes->GetSprintCost();
@@ -346,11 +349,33 @@ void APlayerCharacter::StartSprinting()
 	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina(SprintCost)) return;
 
 	GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
+
+	GetWorldTimerManager().SetTimer(SprintingTimer, SprintingTimerDelegate, .05f, true);
+
+	GEngine->AddOnScreenDebugMessage(0, 10, FColor::White, TEXT("Started Sprinting"));
 }
 
 void APlayerCharacter::EndSprinting()
 {
 	GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
+	GEngine->AddOnScreenDebugMessage(1, 10, FColor::Red, TEXT("Ended Sprinting"));
+
+	GetWorldTimerManager().ClearTimer(SprintingTimer);
+}
+
+void APlayerCharacter::DepleteStaminaFromSprinting(float StaminaToDeplete)
+{
+	if (ActionState != EActionState::EAS_Unoccupied || !HasEnoughStamina(StaminaToDeplete))
+		EndSprinting();
+
+	if (GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero(3.f))
+		EndSprinting();
+
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->UseStamina(StaminaToDeplete);
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
 }
 
 bool APlayerCharacter::HasEnoughStamina(float StaminaToUse)

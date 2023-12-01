@@ -105,6 +105,12 @@ protected:
 	void EndSprinting();
 	bool HasEnoughStamina(float StaminaToUse);
 
+	UFUNCTION()
+	void DepleteStaminaFromSprinting(float StaminaToDeplete);
+
+	FTimerDelegate SprintingTimerDelegate;
+	FTimerHandle SprintingTimer;
+
 #pragma endregion
 
 private:
