@@ -20,6 +20,10 @@
 #include "Components/AttributeComponent.h"
 #include "HUD/PlayerHUD.h"
 #include "HUD/PlayerOverlay.h"
+#include "LockOnTargetComponent.h"
+#include "TargetHandlers/WeightedTargetHandler.h"
+#include "Components/ActorComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #pragma region Main
 
@@ -33,16 +37,24 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 600.f, 0.f);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->TargetArmLength = 300;
 
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->bEnableCameraRotationLag = true;
+
 	ViewCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ViewCamera"));
 	ViewCamera->SetupAttachment(SpringArm);
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
+
+	LockOnTarget = CreateDefaultSubobject<ULockOnTargetComponent>(TEXT("LockOnTarget"));
+
+	auto* MyTargetHandler = CreateDefaultSubobject<UWeightedTargetHandler>(TEXT("TargetHandler"));
+	LockOnTarget->SetDefaultTargetHandler(MyTargetHandler);
 }
 
 void APlayerCharacter::BeginPlay()
@@ -64,6 +76,9 @@ void APlayerCharacter::BeginPlay()
 
 	if (Attributes)
 		SprintingTimerDelegate.BindUFunction(this, FName("DepleteStaminaFromSprinting"), Attributes->GetSprintCost());
+
+	LockOnTarget->OnTargetLocked.AddDynamic(this, &APlayerCharacter::OnTargetLocked);
+	LockOnTarget->OnTargetUnlocked.AddDynamic(this, &APlayerCharacter::OnTargetUnlocked);
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -101,6 +116,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Dodge);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprinting);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::EndSprinting);
+		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Triggered, this, &APlayerCharacter::ToggleLockOnTarget);
+		EnhancedInputComponent->BindAction(LockOnRightAction, ETriggerEvent::Triggered, this, &APlayerCharacter::LockOnRight);
+		EnhancedInputComponent->BindAction(LockOnLeftAction, ETriggerEvent::Triggered, this, &APlayerCharacter::LockOnLeft);
 	}
 }
 
@@ -161,6 +179,12 @@ void APlayerCharacter::DropWeapon()
 void APlayerCharacter::BackToUnoccupiedState()
 {
 	ActionState = EActionState::EAS_Unoccupied;
+
+	if (LockOnTarget->IsTargetLocked())
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	}
 }
 
 void APlayerCharacter::InitializePlayerOverlay(APlayerController* PlayerController)
@@ -328,6 +352,24 @@ void APlayerCharacter::Dodge()
 
 	if (AnimInstance && DodgeMontage)
 	{
+		if (LockOnTarget->IsTargetLocked())
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = true;
+			GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		}
+
+
+		FVector CurrentAcceleration = GetCharacterMovement()->GetCurrentAcceleration();
+
+		if (!CurrentAcceleration.IsNearlyZero())
+		{
+			FVector AccelerationNormal = CurrentAcceleration.GetSafeNormal();
+
+			FRotator NewRotation = UKismetMathLibrary::MakeRotFromX(AccelerationNormal);
+
+			SetActorRotation(NewRotation);
+		}
+
 		AnimInstance->Montage_Play(DodgeMontage);
 		ActionState = EActionState::EAS_Occupied;
 
@@ -351,15 +393,11 @@ void APlayerCharacter::StartSprinting()
 	GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
 
 	GetWorldTimerManager().SetTimer(SprintingTimer, SprintingTimerDelegate, .05f, true);
-
-	GEngine->AddOnScreenDebugMessage(0, 10, FColor::White, TEXT("Started Sprinting"));
 }
 
 void APlayerCharacter::EndSprinting()
 {
 	GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
-	GEngine->AddOnScreenDebugMessage(1, 10, FColor::Red, TEXT("Ended Sprinting"));
-
 	GetWorldTimerManager().ClearTimer(SprintingTimer);
 }
 
@@ -376,6 +414,38 @@ void APlayerCharacter::DepleteStaminaFromSprinting(float StaminaToDeplete)
 		Attributes->UseStamina(StaminaToDeplete);
 		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
+}
+
+void APlayerCharacter::ToggleLockOnTarget()
+{
+	LockOnTarget->EnableTargeting();
+}
+
+void APlayerCharacter::LockOnRight()
+{
+	LockOnTarget->SwitchTargetManual(FVector2D(1, 0));
+}
+
+void APlayerCharacter::LockOnLeft()
+{
+	LockOnTarget->SwitchTargetManual(FVector2D(-1, 0));
+}
+
+void APlayerCharacter::OnTargetLocked(UTargetComponent* Target, FName Socket)
+{
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+
+	SpringArm->SetRelativeRotation(FRotator(-25, 0, 0));
+	SpringArm->bInheritPitch = false;
+}
+
+void APlayerCharacter::OnTargetUnlocked(UTargetComponent* Target, FName Socket)
+{
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+
+	SpringArm->bInheritPitch = true;
 }
 
 bool APlayerCharacter::HasEnoughStamina(float StaminaToUse)
