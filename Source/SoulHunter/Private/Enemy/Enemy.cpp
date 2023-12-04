@@ -10,6 +10,7 @@
 #include "HUD/HealthBarComponent.h"
 #include "Items/Weapons/Weapon.h"
 #include "Items/Soul.h"
+#include "TargetComponent.h"
 
 #pragma region Main
 
@@ -30,6 +31,10 @@ AEnemy::AEnemy()
 	PawnSensing = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("Pawn Sensing"));
 	PawnSensing->SightRadius = PawnSightRadius;
 	PawnSensing->SetPeripheralVisionAngle(PawnPeripheralVisionAngle);
+
+	TargetComponent = CreateDefaultSubobject<UTargetComponent>(TEXT("Target"));
+	TargetComponent->SetAssociatedComponent(GetMesh());
+	TargetComponent->SetDefaultSocket(TEXT("TargetWidgetSocket"));
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -134,6 +139,8 @@ void AEnemy::Death(const FVector& ImpactPoint)
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	SpawnSoul();
+
+	TargetComponent->SetCanBeCaptured(false);
 }
 
 void AEnemy::SpawnSoul()

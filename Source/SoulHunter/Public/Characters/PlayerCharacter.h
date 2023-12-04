@@ -21,6 +21,7 @@ class AItem;
 class UAnimMontage;
 class ASoul;
 class ATreasure;
+class ULockOnTargetComponent;
 
 #pragma endregion
 
@@ -89,6 +90,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* SprintAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* LockOnTargetAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* LockOnRightAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* LockOnLeftAction;
+
 #pragma endregion
 
 #pragma region Combat
@@ -108,8 +118,21 @@ protected:
 	UFUNCTION()
 	void DepleteStaminaFromSprinting(float StaminaToDeplete);
 
+	void ToggleLockOnTarget();
+	void LockOnRight();
+	void LockOnLeft();
+
+	UFUNCTION()
+	void OnTargetLocked(class UTargetComponent* Target, FName Socket);
+
+	UFUNCTION()
+	void OnTargetUnlocked(class UTargetComponent* Target, FName Socket);
+
 	FTimerDelegate SprintingTimerDelegate;
 	FTimerHandle SprintingTimer;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TargetLock)
+	ULockOnTargetComponent* LockOnTarget;
 
 #pragma endregion
 

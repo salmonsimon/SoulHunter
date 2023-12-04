@@ -13,6 +13,7 @@ class UAnimMontage;
 class UAttributeComponent;
 class UHealthBarComponent;
 class UPawnSensingComponent;
+class UTargetComponent;
 
 #pragma endregion
 
@@ -51,6 +52,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float DeathLifeSpan = 30.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TargetLock)
+	UTargetComponent* TargetComponent;
 
 #pragma endregion
 
