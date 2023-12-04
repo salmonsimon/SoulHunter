@@ -23,6 +23,7 @@
 #include "LockOnTargetComponent.h"
 #include "TargetHandlers/WeightedTargetHandler.h"
 #include "Components/ActorComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #pragma region Main
 
@@ -178,6 +179,12 @@ void APlayerCharacter::DropWeapon()
 void APlayerCharacter::BackToUnoccupiedState()
 {
 	ActionState = EActionState::EAS_Unoccupied;
+
+	if (LockOnTarget->IsTargetLocked())
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	}
 }
 
 void APlayerCharacter::InitializePlayerOverlay(APlayerController* PlayerController)
@@ -354,6 +361,17 @@ void APlayerCharacter::Dodge()
 
 	if (AnimInstance && DodgeMontage)
 	{
+		if (LockOnTarget->IsTargetLocked())
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = true;
+			GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		}
+
+		FVector AccelerationNormal = GetCharacterMovement()->GetCurrentAcceleration().GetSafeNormal();
+		FRotator NewRotation = UKismetMathLibrary::MakeRotFromX(AccelerationNormal);
+
+		SetActorRotation(NewRotation);
+
 		AnimInstance->Montage_Play(DodgeMontage);
 		ActionState = EActionState::EAS_Occupied;
 
