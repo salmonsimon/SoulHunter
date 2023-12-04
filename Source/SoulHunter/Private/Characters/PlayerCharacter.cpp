@@ -288,17 +288,8 @@ void APlayerCharacter::Attack()
 {
 	if (CanAttack())
 	{
-		//PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
-		//ActionState = EActionState::EAS_Attacking;
-
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && AttackMontage)
-		{
-			AnimInstance->Montage_Play(AttackMontage);
-			AnimInstance->Montage_JumpToSection("Attack1", AttackMontage);
-
-			ActionState = EActionState::EAS_Attacking;
-		}
+		PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
+		ActionState = EActionState::EAS_Attacking;
 	}
 }
 
@@ -367,10 +358,17 @@ void APlayerCharacter::Dodge()
 			GetCharacterMovement()->bUseControllerDesiredRotation = false;
 		}
 
-		FVector AccelerationNormal = GetCharacterMovement()->GetCurrentAcceleration().GetSafeNormal();
-		FRotator NewRotation = UKismetMathLibrary::MakeRotFromX(AccelerationNormal);
 
-		SetActorRotation(NewRotation);
+		FVector CurrentAcceleration = GetCharacterMovement()->GetCurrentAcceleration();
+
+		if (!CurrentAcceleration.IsNearlyZero())
+		{
+			FVector AccelerationNormal = CurrentAcceleration.GetSafeNormal();
+
+			FRotator NewRotation = UKismetMathLibrary::MakeRotFromX(AccelerationNormal);
+
+			SetActorRotation(NewRotation);
+		}
 
 		AnimInstance->Montage_Play(DodgeMontage);
 		ActionState = EActionState::EAS_Occupied;
