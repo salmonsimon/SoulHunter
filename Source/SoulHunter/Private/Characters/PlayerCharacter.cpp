@@ -22,6 +22,7 @@
 #include "HUD/PlayerOverlay.h"
 #include "LockOnTargetComponent.h"
 #include "TargetHandlers/WeightedTargetHandler.h"
+#include "Components/ActorComponent.h"
 
 #pragma region Main
 
@@ -280,8 +281,17 @@ void APlayerCharacter::Attack()
 {
 	if (CanAttack())
 	{
-		PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
-		ActionState = EActionState::EAS_Attacking;
+		//PlayMontageRandomSection(AttackMontage, LastSelectedAttackMontageSection);
+		//ActionState = EActionState::EAS_Attacking;
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && AttackMontage)
+		{
+			AnimInstance->Montage_Play(AttackMontage);
+			AnimInstance->Montage_JumpToSection("Attack1", AttackMontage);
+
+			ActionState = EActionState::EAS_Attacking;
+		}
 	}
 }
 
