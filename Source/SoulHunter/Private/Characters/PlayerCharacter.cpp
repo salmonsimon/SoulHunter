@@ -35,7 +35,7 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 600.f, 0.f);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -408,19 +408,16 @@ void APlayerCharacter::LockOnLeft()
 void APlayerCharacter::OnTargetLocked(UTargetComponent* Target, FName Socket)
 {
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-
-	bUseControllerRotationYaw = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 
 	SpringArm->SetRelativeRotation(FRotator(-25, 0, 0));
-
 	SpringArm->bInheritPitch = false;
 }
 
 void APlayerCharacter::OnTargetUnlocked(UTargetComponent* Target, FName Socket)
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
 	SpringArm->bInheritPitch = true;
 }
